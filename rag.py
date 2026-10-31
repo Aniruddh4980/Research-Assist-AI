@@ -3,7 +3,7 @@ from uuid import uuid4
 from dotenv import load_dotenv
 from pathlib import Path
 from langchain_classic.chains import RetrievalQAWithSourcesChain
-from langchain_community.document_loaders import UnstructuredURLLoader
+from langchain_community.document_loaders import WebBaseLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
 from langchain_groq import ChatGroq
@@ -54,7 +54,7 @@ def process_urls(urls):
     initialize_components()
 
     yield ('Loading data...✅')
-    loader = UnstructuredURLLoader(urls=urls, continue_on_failure=False)
+    loader = WebBaseLoader(web_paths=urls)
     data = loader.load()
 
     if not data:

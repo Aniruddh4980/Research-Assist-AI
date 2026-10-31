@@ -8,7 +8,7 @@ Live Link: https://research-assist-ai.streamlit.app/
 
 ## ✨ Features
 
-- **Web Content Ingestion:** Load content from multiple public URLs using LangChain's `UnstructuredURLLoader`.
+- **Web Content Ingestion:** Load content from multiple public URLs using LangChain's `WebBaseLoader`.
 - **Document Processing:** Split documents into manageable chunks using `RecursiveCharacterTextSplitter`.
 - **Semantic Embeddings:** Generate document embeddings using LangChain's `HuggingFaceEmbeddings` integration.
 - **Vector Database:** Store and retrieve document embeddings using Chroma.
@@ -26,7 +26,7 @@ The application uses LangChain to connect the document ingestion, embedding, ret
                  Public Web URLs
                         │
                         ▼
-              UnstructuredURLLoader
+                  WebBaseLoader
                         │
                         ▼
            RecursiveCharacterTextSplitter
@@ -72,7 +72,7 @@ The application uses LangChain to connect the document ingestion, embedding, ret
 | Frontend | Streamlit |
 | RAG Framework | LangChain |
 | Retrieval Chain | `RetrievalQAWithSourcesChain` |
-| URL Loader | `UnstructuredURLLoader` |
+| URL Loader | `WebBaseLoader` |
 | Text Splitter | `RecursiveCharacterTextSplitter` |
 | Embedding Integration | `HuggingFaceEmbeddings` |
 | Embedding Models | Hugging Face |

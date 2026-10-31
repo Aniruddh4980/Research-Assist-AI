@@ -1,7 +1,7 @@
 sentence-transformers==6.1.0
 python-dotenv
 streamlit
-unstructured
+beautifulsoup4
 tiktoken
 langchain-chroma
 langchain-groq
