@@ -10,3 +10,4 @@ langchain-classic
 langchain-text-splitters
 protobuf
 langchain-huggingface
+spacy>=3.0.0,<4.0.0
