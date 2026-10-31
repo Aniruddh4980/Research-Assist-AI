@@ -1,69 +1,101 @@
 # Research Assist AI
 
-A Streamlit-based Retrieval-Augmented Generation (RAG) application that turns public web pages into a searchable knowledge base. Add URLs, index their content, and ask questions answered using retrieved document context—with source URLs for transparency.
+A Streamlit-based Retrieval-Augmented Generation (RAG) application that transforms public web pages into a searchable knowledge base. Ingest URLs, index their content, and ask questions using retrieved document context, with source references to help verify the answers.
 
-![Research Assistant RAG interface](resources/ui.png)
+Live Link: https://research-assist-ai.streamlit.app/
+
+![Research Assistant RAG Interface](resources/ui.png)
 
 ## ✨ Features
 
-- **URL ingestion** — load content from one or more public web pages.
-- **Document processing** — split source content into chunks for retrieval.
-- **Semantic search** — create embeddings with a Hugging Face embedding model.
-- **Persistent vector storage** — store and retrieve chunks with a local Chroma database.
-- **LLM-powered answers** — generate responses using a Groq-hosted language model.
-- **Source visibility** — inspect the URLs returned as sources for an answer.
-- **Interactive UI** — use a Streamlit chat interface with ingestion and query status indicators.
+- **Web Content Ingestion:** Load content from multiple public URLs using LangChain's `UnstructuredURLLoader`.
+- **Document Processing:** Split documents into manageable chunks using `RecursiveCharacterTextSplitter`.
+- **Semantic Embeddings:** Generate document embeddings using LangChain's `HuggingFaceEmbeddings` integration.
+- **Vector Database:** Store and retrieve document embeddings using Chroma.
+- **Retrieval-Augmented Generation:** Use LangChain's `RetrievalQAWithSourcesChain` to combine relevant document retrieval with LLM-powered answer generation.
+- **LLM Integration:** Generate responses using Groq-hosted language models through LangChain's `ChatGroq` integration.
+- **Source Attribution:** Display source URLs associated with retrieved information.
+- **Persistent Storage:** Preserve indexed documents in a local Chroma vector database.
+- **Interactive Chat Interface:** Explore indexed web content through a Streamlit application with ingestion and query status indicators.
 
-## 🧠 Architecture
+## 🏗️ Architecture
+
+The application uses LangChain to connect the document ingestion, embedding, retrieval, and answer-generation components.
 
 ```text
-Public URLs
-    │
-    ▼
-URL / document loader
-    │
-    ▼
-Text splitting
-    │
-    ▼
-Hugging Face embeddings
-    │
-    ▼
-Chroma vector store (local, persistent)
-    │
-    ▼
-Retriever ───────► Relevant document chunks
-    │                         │
-    └─────────────┬───────────┘
-                  ▼
-             Groq LLM
-                  │
-                  ▼
-        Answer + source URLs
+                 Public Web URLs
+                        │
+                        ▼
+              UnstructuredURLLoader
+                        │
+                        ▼
+           RecursiveCharacterTextSplitter
+                        │
+                        ▼
+               HuggingFaceEmbeddings
+                        │
+                        ▼
+                Chroma Vector Store
+                 (Persistent Storage)
+                        │
+                        ▼
+                     Retriever
+                        │
+                        ▼
+             RetrievalQAWithSourcesChain
+                        │
+                        ▼
+                    ChatGroq
+                        │
+                        ▼
+               Generated Answer
+                        │
+                        ▼
+                  Source URLs
 ```
+
+### How the RAG Pipeline Works
+
+1. **Ingestion:** Load content from user-provided URLs.
+2. **Chunking:** Divide the extracted content into smaller text chunks.
+3. **Embedding:** Convert document chunks into vector embeddings using a Hugging Face embedding model.
+4. **Indexing:** Store the embeddings and associated documents in Chroma.
+5. **Retrieval:** Find relevant document chunks for a user's question.
+6. **Generation:** Pass the retrieved context to a Groq-hosted language model through LangChain.
+7. **Source Attribution:** Return the generated answer alongside source references.
 
 ## 🛠️ Tech Stack
 
 | Component | Technology |
 |---|---|
-| User interface | Streamlit |
-| RAG orchestration / document processing | See `requirements.txt` |
-| Embeddings | Hugging Face |
-| Vector database | Chroma |
-| Answer generation | Groq API |
-| Language | Python |
+| Programming Language | Python |
+| Frontend | Streamlit |
+| RAG Framework | LangChain |
+| Retrieval Chain | `RetrievalQAWithSourcesChain` |
+| URL Loader | `UnstructuredURLLoader` |
+| Text Splitter | `RecursiveCharacterTextSplitter` |
+| Embedding Integration | `HuggingFaceEmbeddings` |
+| Embedding Models | Hugging Face |
+| Vector Database | Chroma |
+| Vector Store Integration | `langchain-chroma` |
+| LLM Integration | `ChatGroq` |
+| LLM Provider | Groq |
+| Configuration Management | `python-dotenv` |
 
-> The exact package versions and additional libraries are defined in `requirements.txt`.
+The project uses modular LangChain integrations for document loading, text splitting, embeddings, vector storage, and LLM interaction.
 
-## ✅ Prerequisites
+## 📋 Prerequisites
 
-- Python 3.10 or newer
-- A [Groq API key](https://console.groq.com/keys)
-- Internet access to fetch web pages and download the embedding model on first use
+Before running the application, ensure you have:
 
-## 🚀 Getting Started
+- Python 3.10 or newer.
+- A [Groq API key](https://console.groq.com/keys).
+- Internet access to retrieve web content and download the embedding model when required.
+- The dependencies listed in `requirements.txt`.
 
-### 1. Clone the repository
+## 🚀 Installation
+
+### 1. Clone the Repository
 
 Replace the placeholders with your repository URL and directory name.
 
@@ -72,9 +104,9 @@ git clone <your-repository-url>
 cd <repository-directory>
 ```
 
-### 2. Create and activate a virtual environment
+### 2. Create a Virtual Environment
 
-**Windows PowerShell**
+**Windows — PowerShell**
 
 ```powershell
 python -m venv .venv
@@ -88,16 +120,18 @@ python -m venv .venv
 source .venv/bin/activate
 ```
 
-### 3. Install dependencies
+### 3. Install Dependencies
+
+Upgrade pip and install the project dependencies.
 
 ```bash
 python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-### 4. Configure environment variables
+### 4. Configure Environment Variables
 
-Create a `.env` file in the project root:
+Create a `.env` file in the project root directory.
 
 ```env
 GROQ_API_KEY=your_groq_api_key
@@ -106,71 +140,91 @@ EMBEDDING_MODEL=your_hugging_face_embedding_model
 COLLECTION_NAME=research_store
 ```
 
-Set each model variable to a model supported by your installed dependencies and available to your account. Keep `.env` private and do not commit API keys to version control.
+Configure each variable according to the models and settings supported by your implementation.
 
-### 5. Launch the application
+**Security:** Never commit your `.env` file or expose API keys in your repository. Add `.env` to `.gitignore`.
+
+### 5. Run the Application
+
+Launch the Streamlit application:
 
 ```bash
 streamlit run main.py
 ```
 
-Open the local URL shown in the terminal (typically `http://localhost:8501`).
+Streamlit will display a local URL in the terminal. Open it in your browser, typically at:
 
-## 💬 How to Use
+```text
+http://localhost:8501
+```
 
-1. Start the app.
-2. Paste one or more public article, documentation, report, or other web-page URLs into the sidebar.
-3. Select **Process URLs** to load the pages, split their content, generate embeddings, and index the resulting chunks.
-4. Ask a question in the chat interface—for example:
-   - *What are the main findings across these sources?*
-   - *How do the recommendations in these articles compare?*
-   - *What evidence supports the conclusion?*
-5. Expand **View Cited Sources** below an answer to inspect the source URLs returned by retrieval.
+## 💬 Usage
 
-The local Chroma database is persisted under `resources/vectorstore`, allowing indexed content to remain available between launches.
+1. Launch the application.
+2. Enter one or more public web URLs in the sidebar.
+3. Click **Process URLs** to load, split, embed, and index the content.
+4. Wait for processing to complete.
+5. Ask questions about the indexed documents through the chat interface.
+6. Expand **View Cited Sources** below an answer to inspect the associated source URLs.
+
+### Example Questions
+
+- What are the main findings in these articles?
+- Summarize the key points from the provided sources.
+- Compare the recommendations across these documents.
+- What evidence supports the main conclusion?
+- Identify the major differences between the indexed articles.
+
+The quality of the answers depends on source accessibility, document processing, retrieval relevance, and the selected language model.
 
 ## 📁 Project Structure
 
 ```text
 .
-├── main.py                  # Streamlit application and chat UI
-├── rag.py                   # URL ingestion, retrieval, and answer generation
+├── main.py                  # Streamlit user interface
+├── rag.py                   # RAG pipeline and answer generation
 ├── requirements.txt         # Python dependencies
 └── resources/
     ├── ui.png               # Application screenshot
-    └── vectorstore/         # Persistent Chroma database (generated at runtime)
-
+    └── vectorstore/         # Persistent Chroma database
 ```
 
-*This structure reflects the files described in this README; update it if the repository layout changes.*
+The directory structure above reflects the project layout described in this README. Update it if your repository differs.
 
-## ⚙️ Configuration
+## ⚙️ Configuration Reference
 
 | Variable | Description |
 |---|---|
-| `GROQ_API_KEY` | API key used to authenticate with Groq. |
-| `GROQ_MODEL` | Groq chat model used to generate answers. |
+| `GROQ_API_KEY` | API key used to authenticate requests to Groq. |
+| `GROQ_MODEL` | Groq-hosted language model used to generate answers. |
 | `EMBEDDING_MODEL` | Hugging Face embedding model used for semantic search. |
-| `COLLECTION_NAME` | Name of the Chroma collection used to store indexed chunks. |
+| `COLLECTION_NAME` | Name of the Chroma collection used to store indexed documents. |
 
-## 🔒 Security, Limitations & Notes
+The Chroma vector database is persisted under `resources/vectorstore`, allowing previously indexed content to remain available between application launches.
 
-- Do not commit `.env` files, API keys, or other secrets. Add `.env` to `.gitignore`.
-- Only ingest pages you are authorized to access and process; respect website terms and applicable copyright rules.
-- Some websites block automated requests or render content dynamically, so ingestion may fail for certain URLs.
-- Answer quality depends on the accessible source content, chunking, retrieval quality, and the selected language model.
-- Source URLs indicate the retrieved references; they do not independently guarantee that every generated statement is fully supported by those sources.
-- The app requires internet access for URL ingestion and calls to Groq. The embedding model may need an initial download.
+## 🔒 Security and Limitations
 
-## 🗺️ Potential Improvements
+- **API key security:** Store credentials in environment variables and never commit secrets to version control.
+- **Website accessibility:** Some websites restrict automated requests or require JavaScript rendering, which may prevent successful ingestion.
+- **Source quality:** Incomplete or inaccurate source content can affect the quality of generated answers.
+- **Retrieval limitations:** Relevant information may not always be retrieved for every question.
+- **LLM limitations:** Generated responses may contain unsupported claims. Review the cited sources when accuracy matters.
+- **Internet dependency:** URL ingestion and Groq-hosted inference require network connectivity.
 
-Ideas for future development—not necessarily implemented yet:
+Only process web content that you are authorized to access and use, and respect applicable website terms and copyright requirements.
 
-- Add automated tests for ingestion, retrieval, and answer generation.
-- Add URL validation, duplicate detection, and clearer error handling.
-- Add retrieval evaluation and configurable chunking / search parameters.
-- Add Docker support and CI checks for repeatable setup.
+## 🔮 Potential Future Improvements
+
+The following are potential enhancements rather than claims about existing functionality:
+
+- Add automated tests for document ingestion, retrieval, and answer generation.
+- Implement URL validation, duplicate detection, and improved error handling.
+- Evaluate retrieval quality using a dedicated RAG evaluation framework.
+- Add configurable chunk sizes, overlap settings, and retrieval parameters.
+- Introduce document metadata filtering and more advanced retrieval strategies.
+- Add Docker support for reproducible deployment.
+- Implement CI workflows for automated testing and code quality checks.
 
 ## 📄 License
 
-This project is described as available under the MIT License. See [`LICENSE`](LICENSE) for the license text.
+This project is distributed under the MIT License, as referenced by the repository's `LICENSE` file.
