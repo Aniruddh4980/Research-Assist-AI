@@ -1,5 +1,7 @@
+
 import os
 import streamlit as st
+from uuid import uuid4
 
 # --------------------------------------------------
 # 1. Page Configuration
@@ -16,17 +18,13 @@ st.set_page_config(
 # 2. Load Streamlit Cloud Secrets
 # --------------------------------------------------
 
-for key in [
-    "GROQ_API_KEY",
-    "GROQ_MODEL",
-    "EMBEDDING_MODEL",
-    "COLLECTION_NAME"
-]:
-    if key in st.secrets:
-        os.environ[key] = str(st.secrets[key])
-
-# Import after loading secrets because rag.py reads
-# environment variables during module initialization.
+# for key in [
+#     "GROQ_API_KEY",
+#     "GROQ_MODEL",
+#     "EMBEDDING_MODEL"
+# ]:
+#     if key in st.secrets:
+#         os.environ[key] = str(st.secrets[key])
 
 from rag import (
     process_urls,
@@ -208,6 +206,9 @@ html, body, [class*="css"] {
 # 4. Session State Initialization
 # --------------------------------------------------
 
+if "workspace_id" not in st.session_state:
+    st.session_state.workspace_id = uuid4().hex
+
 if "messages" not in st.session_state:
     st.session_state.messages = [
         {
@@ -232,13 +233,23 @@ if "indexed_count" not in st.session_state:
 if "ingestion_error" not in st.session_state:
     st.session_state.ingestion_error = None
 
+if "url_results" not in st.session_state:
+    st.session_state.url_results = []
+
 
 # --------------------------------------------------
-# 5. Initialize RAG Components
+# 5. Initialize Session-Specific RAG Components
 # --------------------------------------------------
 
 try:
-    vector_store = initialize_components()
+
+    collection_name = (
+        f"catalyst_{st.session_state.workspace_id}"
+    )
+
+    vector_store = initialize_components(
+        collection_name=collection_name
+    )
 
     current_count = vector_store._collection.count()
 
@@ -318,6 +329,7 @@ with st.sidebar:
 
             st.session_state.urls_processed = False
             st.session_state.ingestion_error = None
+            st.session_state.url_results = []
 
             try:
 
@@ -337,32 +349,51 @@ with st.sidebar:
                     expanded=True
                 ) as status:
 
-                    for step_status in process_urls(urls):
-                        st.write(f"✔️ {step_status}")
+                    result = process_urls(
+                        urls,
+                        vector_store
+                    )
+
+                    st.session_state.url_results = (
+                        result["url_results"]
+                    )
 
                     # Verify actual database contents
                     actual_count = vector_store._collection.count()
 
-                    if actual_count == 0:
-                        raise RuntimeError(
-                            "No documents found in ChromaDB."
+                    st.session_state.indexed_count = actual_count
+                    st.session_state.urls_processed = (
+                        actual_count > 0
+                    )
+
+                    indexed_urls = [
+                        item for item in result["url_results"]
+                        if item["status"] == "indexed"
+                    ]
+
+                    if indexed_urls:
+
+                        status.update(
+                            label="✅ URL processing completed",
+                            state="complete",
+                            expanded=False
                         )
 
-                    st.session_state.indexed_count = actual_count
-                    st.session_state.urls_processed = True
+                    else:
 
-                    status.update(
-                        label=f"✅ Vector Database Ready ({actual_count} chunks)",
-                        state="complete",
-                        expanded=False
-                    )
+                        status.update(
+                            label="⚠️ No URLs could be indexed",
+                            state="error",
+                            expanded=False
+                        )
 
                 ingest_pulse.empty()
 
-                st.toast(
-                    f"Successfully indexed {actual_count} chunks!",
-                    icon="✨"
-                )
+                if indexed_urls:
+                    st.toast(
+                        "URL processing completed!",
+                        icon="✨"
+                    )
 
             except Exception as e:
 
@@ -373,6 +404,40 @@ with st.sidebar:
 
                 st.error(
                     f"❌ URL processing failed: {str(e)}"
+                )
+
+    # ----------------------------------------------
+    # URL Processing Results
+    # ----------------------------------------------
+
+    if st.session_state.url_results:
+
+        st.divider()
+        st.markdown("### URL Status")
+
+        for item in st.session_state.url_results:
+
+            url = item["url"]
+
+            if item["status"] == "indexed":
+
+                st.success(
+                    f"**Indexed**\n\n{url}",
+                    icon="✅"
+                )
+
+            elif item["status"] == "blocked":
+
+                st.warning(
+                    f"**Blocked**\n\n{url}",
+                    icon="🚫"
+                )
+
+            else:
+
+                st.error(
+                    f"**Failed**\n\n{url}",
+                    icon="❌"
                 )
 
     st.divider()
@@ -392,10 +457,10 @@ with st.sidebar:
 
     if actual_count > 0:
 
-        st.markdown(f"""
+        st.markdown("""
         <div class="status-badge">
             <span class="pulse-dot pulse-green"></span>
-            <span>Index Available &bull; {actual_count} Chunks</span>
+            <span>Index Available</span>
         </div>
         """, unsafe_allow_html=True)
 
@@ -478,7 +543,7 @@ if query := st.chat_input(
 
         try:
 
-            # Always verify the actual database count
+            # Always verify the current session's database
             actual_count = vector_store._collection.count()
 
             if actual_count == 0:
@@ -488,7 +553,10 @@ if query := st.chat_input(
                     "Please process URLs first."
                 )
 
-            answer, sources = generate_answer(query)
+            answer, sources = generate_answer(
+                query,
+                vector_store
+            )
 
             pulse_loader.empty()
 
